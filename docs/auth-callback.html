@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pictefor — Authentication</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 4rem auto; padding: 0 1rem; text-align: center; }
+    .success { color: #16a34a; }
+    .error { color: #dc2626; }
+    .token-box { background: #f3f4f6; padding: 1rem; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 1rem 0; }
+    button { background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+    button:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Pictefor Authentication</h1>
+  <div id="status">Processing...</div>
+  <div id="token-section" style="display:none">
+    <p>If the app didn't open automatically, copy this token and paste it into Pictefor:</p>
+    <div class="token-box" id="token-display"></div>
+    <button onclick="copyToken()">Copy Token</button>
+  </div>
+
+  <script>
+    // Extract token from URL hash or query params
+    const hash = new URLSearchParams(window.location.hash.substring(1));
+    const query = new URLSearchParams(window.location.search);
+    const accessToken = hash.get('access_token') || query.get('access_token') || 
+                        window.location.hash.split('access_token=')[1]?.split('&')[0];
+    
+    const status = document.getElementById('status');
+    const tokenSection = document.getElementById('token-section');
+    const tokenDisplay = document.getElementById('token-display');
+    
+    if (accessToken) {
+      // Try to redirect to custom protocol
+      const protocolUrl = `pictefor://auth-callback?token=${encodeURIComponent(accessToken)}`;
+      
+      // Attempt redirect
+      window.location.href = protocolUrl;
+      
+      // Fallback: show manual copy option after 2 seconds
+      setTimeout(() => {
+        status.innerHTML = '<p class="success">✓ If the app opened, you\'re all set!</p><p>If not, use the token below:</p>';
+        tokenDisplay.textContent = accessToken;
+        tokenSection.style.display = 'block';
+      }, 2000);
+    } else {
+      status.innerHTML = '<p class="error">❌ No authentication token found in URL.</p><p>Please check your email and click the confirmation link again.</p>';
+    }
+    
+    function copyToken() {
+      navigator.clipboard.writeText(tokenDisplay.textContent)
+        .then(() => {
+          alert('✓ Token copied! Paste it into Pictefor.');
+        })
+        .catch(() => {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea');
+          textarea.value = tokenDisplay.textContent;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          alert('✓ Token copied! Paste it into Pictefor.');
+        });
+    }
+  </script>
+</body>
+</html>
